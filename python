@@ -1,0 +1,111 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+df = pd.read_csv("C:\\Users\\Vijay\\Downloads\\FeedGrains (1)\\FeedGrains.csv")
+df.head()
+df.info()
+df.isnull().sum()
+df.describe()
+# Frequency counts
+df['SC_Group_Desc'].value_counts()
+df['Timeperiod_Desc'].value_counts().head(10)
+#--- Line Graph: Average amount per year ---
+plt.figure(figsize=(10, 5))
+df.groupby('Year_ID')['Amount'].mean().plot(kind='line', marker='o', color='gold')
+plt.title("Average Feed Grain Amount Per Year")
+plt.xlabel("Year")
+plt.ylabel("Average Amount")
+plt.grid(True)
+plt.show()
+
+#Get top 10 commodities
+top_commodities = df['SC_Commodity_Desc'].value_counts().head(10)
+print(top_commodities)
+
+# Define a list of colors (you can modify this as needed)
+colors = ['saddlebrown', 'sienna', 'peru', 'tan', 'burlywood',
+          'sandybrown', 'goldenrod', 'darkgoldenrod', 'gold', 'lightsalmon']
+
+
+# Plot the barh chart
+top_commodities.plot(kind='barh', color=colors)
+plt.title("Top 10 Most Frequent Commodities")
+plt.xlabel("Count")
+plt.gca().invert_yaxis()  # Highest count on top
+plt.tight_layout()
+plt.show()
+
+
+
+# --- Pie Chart for Top 5 Commodities ---
+top5_commodities = df['SC_Commodity_Desc'].value_counts().head(5)
+top5_commodities.plot.pie(
+    autopct='%1.1f%%',
+    startangle=140,
+    colors=sns.color_palette('Set2')
+)
+plt.title("Top 5 Commodities Distribution")
+plt.ylabel("")
+plt.show()
+
+# --- Histogram Plot: Distribution of Amount ---
+plt.figure(figsize=(10, 6))
+sns.histplot(df['Amount'], bins=1000, kde=True, color='goldenrod')
+plt.title("Distribution of Feed Grain Amount")
+plt.xlabel("Amount")
+plt.ylabel("Frequency")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# --- Scatter Plot: Year vs Amount ---
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=df, x='Year_ID', y='Amount', hue='SC_Group_Desc', palette='Set2', alpha=0.7)
+plt.title("Scatter Plot of Amount vs Year by Group")
+plt.xlabel("Year")
+plt.ylabel("Amount")
+plt.grid(True)
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+
+
+#--- Correlation Heatmap ---
+plt.figure(figsize=(8, 6))
+corr = df.select_dtypes(include=[np.number]).corr()
+sns.heatmap(corr, annot=True, cmap='YlGnBu', fmt='.2f')
+plt.title("Correlation Heatmap")
+plt.show()
+
+#Detect outliers using IQR
+Q1 = df['Amount'].quantile(0.25)
+Q3 = df['Amount'].quantile(0.75)
+IQR = Q3 - Q1
+outliers = df[(df['Amount'] < Q1 - 1.5 * IQR) | (df['Amount'] > Q3 + 1.5 * IQR)]
+
+# Print outlier count and sample
+print(f"Number of outliers in 'Amount': {len(outliers)}")
+print(outliers[['Year_ID', 'SC_Group_Desc', 'SC_Commodity_Desc', 'Amount']].head())
+
+# Grouped data for box plot
+grouped_amounts = [group['Amount'] for _, group in df.groupby('SC_Group_Desc')]
+
+# Plot
+plt.figure(figsize=(10, 5))
+plt.boxplot(grouped_amounts, patch_artist=True,
+            boxprops=dict(facecolor='saddlebrown', color='brown'),
+            capprops=dict(color='brown'),
+            whiskerprops=dict(color='brown'),
+            flierprops=dict(markerfacecolor='red', markeredgecolor='darkred', marker='o', markersize=5),
+            medianprops=dict(color='gold'))
+
+# Labels
+plt.title("Box Plot of Amount by Group (with Outliers)", fontsize=14)
+plt.xlabel("Group Description")
+plt.ylabel("Amount")
+plt.xticks(ticks=range(1, len(df['SC_Group_Desc'].unique()) + 1),
+           labels=df['SC_Group_Desc'].unique(), rotation=45)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
